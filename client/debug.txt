@@ -1,0 +1,3 @@
+=== main() started ===
+About to create QApplication
+QApplication created!

@@ -1,0 +1,12 @@
+FROM rust:1.75
+
+# Install PostgreSQL client
+RUN apt-get update && apt-get install -y postgresql-client
+
+# Install sqlx-cli
+RUN cargo install sqlx-cli --no-default-features --features postgres
+
+WORKDIR /app
+
+# This Dockerfile is used to run cargo sqlx prepare from inside Docker
+# where it can connect to the voip-postgres container

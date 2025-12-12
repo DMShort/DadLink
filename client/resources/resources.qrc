@@ -1,0 +1,25 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <!-- Placeholder files for now -->
+    <qresource prefix="/icons">
+        <file>icons/PLACEHOLDER.txt</file>
+        <!-- Add your custom icons here:
+        <file>icons/app_icon.png</file>
+        <file>icons/channel_general.png</file>
+        <file>icons/mic_on.png</file>
+        etc.
+        -->
+    </qresource>
+    
+    <qresource prefix="/images">
+        <file>images/PLACEHOLDER.txt</file>
+        <!-- Add your custom images here:
+        <file>images/logo_large.png</file>
+        <file>images/login_background.png</file>
+        -->
+    </qresource>
+    
+    <qresource prefix="/styles">
+        <file>styles/dark_theme.qss</file>
+    </qresource>
+</RCC>

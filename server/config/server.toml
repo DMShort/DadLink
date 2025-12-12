@@ -1,0 +1,26 @@
+[server]
+bind_address = "0.0.0.0"
+control_port = 9000
+voice_port = 9001
+max_connections = 1000
+
+[database]
+url = "postgresql://postgres.nozereosifhbfqmdgsjj:Aella01Harry29@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
+max_connections = 20
+
+[redis]
+url = "redis://localhost:6379"
+
+[security]
+tls_cert = "certs/cert.pem"
+tls_key = "certs/key.pem"
+jwt_secret = "CHANGE_ME_IN_PRODUCTION"
+
+[audio]
+max_bitrate = 128000
+default_bitrate = 32000
+
+[limits]
+max_channels_per_org = 100
+max_users_per_org = 1000
+max_users_per_channel = 50

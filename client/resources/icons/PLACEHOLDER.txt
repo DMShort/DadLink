@@ -1,0 +1,16 @@
+This folder will contain your custom icons.
+
+For now, the application will use text-based icons (emoji) as placeholders.
+
+Recommended icon sizes:
+- App Icon: 256x256 (app_icon.png)
+- Toolbar Icons: 32x32
+- List Icons: 20x20
+
+You can:
+1. Create your own icons
+2. Download from icon packs (flaticon.com, iconmonstr.com)
+3. Use AI to generate custom icons
+4. Hire a designer
+
+Once you have icons, just drop them here and update resources.qrc!

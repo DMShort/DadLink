@@ -1,0 +1,73 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+*.pdb
+
+# Cargo lock file (we copy this explicitly)
+# Cargo.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Documentation
+*.md
+docs/
+README.md
+LICENSE
+
+# Testing
+tests/
+benches/
+examples/
+
+# Environment files (sensitive data)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Certificates (mount these as volumes instead)
+certs/
+*.pem
+*.key
+*.crt
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml

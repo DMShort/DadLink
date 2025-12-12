@@ -1,0 +1,28 @@
+# VoIP Server Configuration
+
+server:
+  bind_address: "0.0.0.0"
+  control_port: 9000
+  voice_port: 9001
+  max_connections: 1000
+
+database:
+  url: "postgresql://voip:password@localhost:5432/voip"
+  max_connections: 20
+
+redis:
+  url: "redis://localhost:6379"
+
+security:
+  tls_cert: "certs/cert.pem"
+  tls_key: "certs/key.pem"
+  jwt_secret: "CHANGE_ME_IN_PRODUCTION_MINIMUM_32_CHARS"
+
+audio:
+  max_bitrate: 128000
+  default_bitrate: 32000
+
+limits:
+  max_channels_per_org: 100
+  max_users_per_org: 1000
+  max_users_per_channel: 50

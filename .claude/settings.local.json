@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Get-Item Qt6WebSockets.dll | Select-Object Name, Length, LastWriteTime\")",
+      "Bash(powershell -Command:*)",
+      "Bash(tasklist:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill /F /PID 23084)",
+      "Bash(taskkill //F //PID 23084)",
+      "Bash(cargo run:*)",
+      "Bash(timeout:*)",
+      "Bash(cmake:*)",
+      "Bash(Select-String -Pattern \"error|warning C[124]|Building|voip-client\\.exe|Finished\")",
+      "Bash(taskkill:*)",
+      "Bash(./deploy.bat)",
+      "Bash(ipconfig:*)",
+      "Bash(cat:*)",
+      "Bash(nslookup:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File \"C:\\dev\\VoIP-System\\test-connection.ps1\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File:*)",
+      "Bash(for i in {1..5})",
+      "Bash(done)",
+      "Bash(dir /s /b c:devVoIP-Systemservermigrations)",
+      "Bash(docker --version:*)",
+      "Bash(docker build:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

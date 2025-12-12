@@ -1,0 +1,50 @@
+[
+  {
+    "id": 8,
+    "username": "dave2",
+    "password": "dave123",
+    "org_id": 1
+  },
+  {
+    "id": 4,
+    "username": "charlie",
+    "password": "charlie123",
+    "org_id": 1
+  },
+  {
+    "id": 7,
+    "username": "dave",
+    "password": "dave123",
+    "org_id": 1
+  },
+  {
+    "id": 1,
+    "username": "demo",
+    "password": "demo123",
+    "org_id": 1
+  },
+  {
+    "id": 3,
+    "username": "bob",
+    "password": "bob123",
+    "org_id": 1
+  },
+  {
+    "id": 2,
+    "username": "alice",
+    "password": "alice123",
+    "org_id": 1
+  },
+  {
+    "id": 5,
+    "username": "test1",
+    "password": "123",
+    "org_id": 1
+  },
+  {
+    "id": 6,
+    "username": "test2",
+    "password": "123",
+    "org_id": 1
+  }
+]

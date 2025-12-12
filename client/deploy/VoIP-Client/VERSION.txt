@@ -1,0 +1,11 @@
+VoIP Client v0.1.0
+Build Date: Tue 09/12/2025  9:07:29.90
+
+Components:
+- Qt 6.10.1
+- Opus Codec
+- PortAudio
+- OpenSSL 3.x
+
+Encryption: SRTP with AES-128-GCM
+Key Exchange: X25519 + HKDF-SHA256

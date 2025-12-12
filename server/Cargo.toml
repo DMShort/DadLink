@@ -1,0 +1,73 @@
+[package]
+name = "voip-server"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+
+[lib]
+name = "voip_server"
+path = "src/lib.rs"
+
+[[bin]]
+name = "voip-server"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+tokio-tungstenite = "0.21"  # WebSocket
+tokio-util = { version = "0.7", features = ["codec"] }
+
+# Web framework
+axum = { version = "0.7", features = ["ws"] }
+axum-server = { version = "0.7", features = ["tls-rustls"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bincode = "1.3"
+
+# Database
+sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "migrate", "chrono"] }
+
+# Redis
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
+
+# Crypto
+argon2 = "0.5"
+jsonwebtoken = "9.2"
+aes-gcm = "0.10"
+rand = "0.8"
+sha2 = "0.10"
+hmac = "0.12"
+hkdf = "0.12"
+x25519-dalek = "2.0"  # Key exchange
+
+# Configuration
+config = "0.13"
+dotenvy = "0.15"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Utilities
+uuid = { version = "1.6", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+bitflags = { version = "2.4", features = ["serde"] }
+futures = "0.3"
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

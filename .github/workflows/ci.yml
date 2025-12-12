@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-server:
+    name: Test Server (Rust)
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: voip_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+    
+    - name: Cache cargo
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          server/target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Check formatting
+      working-directory: server
+      run: cargo fmt --all -- --check
+    
+    - name: Clippy
+      working-directory: server
+      run: cargo clippy --all-targets --all-features -- -D warnings
+    
+    - name: Build
+      working-directory: server
+      run: cargo build --verbose
+    
+    - name: Run tests
+      working-directory: server
+      run: cargo test --verbose
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost/voip_test
+        REDIS_URL: redis://localhost:6379
+
+  test-client:
+    name: Test Client (C++)
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 'master'
+    
+    - name: Install dependencies
+      run: |
+        vcpkg install opus portaudio openssl gtest qt6-base
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build -S client `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure -C Release
+
+  lint-docs:
+    name: Lint Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check Markdown
+      uses: DavidAnson/markdownlint-cli2-action@v14
+      with:
+        globs: '**/*.md'

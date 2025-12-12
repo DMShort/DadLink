@@ -1,0 +1,7 @@
+This folder will contain your custom images and logos.
+
+Recommended:
+- App Logo: 256x256 or larger (PNG with transparency or SVG)
+- Login Background: 1920x1080 (optional)
+
+The application will work without images, but they make it look more professional!

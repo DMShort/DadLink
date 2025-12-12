@@ -1,0 +1,39 @@
+{
+  "audio": {
+    "sample_rate": 48000,
+    "frame_size": 960,
+    "buffer_frames": 3,
+    "input_volume": 1.0,
+    "output_volume": 0.8,
+    "input_device_id": -1,
+    "output_device_id": -1
+  },
+  "opus": {
+    "bitrate": 32000,
+    "complexity": 10,
+    "enable_dtx": true,
+    "enable_fec": true,
+    "expected_packet_loss": 5
+  },
+  "network": {
+    "server_address": "localhost",
+    "control_port": 9000,
+    "voice_port": 9001,
+    "connect_timeout_ms": 5000,
+    "keepalive_interval_ms": 30000
+  },
+  "user": {
+    "username": "",
+    "remember_credentials": false
+  },
+  "hotkeys": {
+    "push_to_talk": "V",
+    "toggle_mute": "M",
+    "toggle_deafen": "D"
+  },
+  "ui": {
+    "theme": "dark",
+    "show_energy_levels": true,
+    "minimize_to_tray": true
+  }
+}
