@@ -57,7 +57,14 @@ impl ServerConfig {
             .add_source(config::Environment::with_prefix("VOIP").separator("__"))
             .build()?;
 
-        Ok(config.try_deserialize()?)
+        let mut server_config: ServerConfig = config.try_deserialize()?;
+
+        // Override database URL from environment if set
+        if let Ok(db_url) = std::env::var("VOIP__DATABASE__URL") {
+            server_config.database.url = db_url;
+        }
+
+        Ok(server_config)
     }
     
     pub fn control_addr(&self) -> SocketAddr {
