@@ -21,7 +21,7 @@ COPY . .
 
 # Build the application with SQLx offline mode
 # This skips compile-time SQL checking - queries are checked at runtime instead
-ENV SQLX_OFFLINE=false
+ENV SQLX_OFFLINE=true
 RUN cargo build --release --bin voip-server
 
 #############################################
