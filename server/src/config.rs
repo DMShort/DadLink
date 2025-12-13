@@ -54,9 +54,9 @@ impl ServerConfig {
     pub fn load() -> anyhow::Result<Self> {
         let config = config::Config::builder()
             .add_source(config::File::with_name("config/server").required(false))
-            .add_source(config::Environment::with_prefix("VOIP"))
+            .add_source(config::Environment::with_prefix("VOIP").separator("__"))
             .build()?;
-        
+
         Ok(config.try_deserialize()?)
     }
     
