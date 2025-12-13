@@ -90,11 +90,11 @@ impl Default for ServerConfig {
                 max_connections: 1000,
             },
             database: DatabaseConfig {
-                url: "postgresql://voip:voip@localhost/voip".to_string(),
+                url: "postgresql://voip:voip@postgres/voip".to_string(),
                 max_connections: 20,
             },
             redis: RedisConfig {
-                url: "redis://localhost:6379".to_string(),
+                url: "redis://redis:6379".to_string(),
             },
             security: SecurityConfig {
                 tls_cert: "certs/cert.pem".to_string(),
