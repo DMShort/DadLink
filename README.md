@@ -1,5 +1,7 @@
 # DadLink - Encrypted Multi-Channel VoIP System
 
+[![CI](https://github.com/DMShort/DadLink/actions/workflows/ci.yml/badge.svg)](https://github.com/DMShort/DadLink/actions/workflows/ci.yml)
+
 A secure, low-latency Push-to-Talk (PTT) voice communication system with end-to-end encryption, built with Rust and Qt.
 
 **Perfect for**: Family communication, gaming groups, team coordination, or any scenario requiring reliable, encrypted voice chat.
