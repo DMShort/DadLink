@@ -40,6 +40,9 @@ examples/
 .env.*
 !.env.example
 
+# Config files (use environment variables instead)
+config/
+
 # Logs
 *.log
 logs/
