@@ -27,7 +27,7 @@ RUN cargo build --release --bin voip-server
 #############################################
 # Stage 2: Runtime
 #############################################
-FROM debian:12-slim
+FROM debian:trixie-slim
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
