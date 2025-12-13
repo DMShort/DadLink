@@ -84,13 +84,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
+    - name: Cache vcpkg
+      uses: actions/cache@v3
+      with:
+        path: |
+          C:/vcpkg
+          ~\AppData\Local\vcpkg
+        key: ${{ runner.os }}-vcpkg-${{ hashFiles('client/vcpkg.json', 'client/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-vcpkg-
+
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
       with:
         vcpkgGitCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'  # Latest stable commit
-    
+
     - name: Install dependencies
+      timeout-minutes: 30
       run: |
         vcpkg install opus portaudio openssl gtest qt6-base
     

@@ -1,0 +1,5 @@
+node_modules/
+target/
+build/
+*_PLAN.md
+ADMIN_FEATURE_DEVELOPMENT_PLAN.md
