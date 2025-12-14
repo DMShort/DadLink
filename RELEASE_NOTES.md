@@ -1,3 +1,19 @@
+# DadLink v1.0.1 - Bug Fix Release
+
+## What's Fixed
+
+### Registration Bug
+- 🐛 **Fixed registration freeze** - Registration now properly respects the "Use TLS" checkbox
+- Previously, registration always attempted plain WebSocket (ws://) connection regardless of TLS setting
+- This caused freezes when connecting to servers that require TLS
+- Registration now works correctly with both secure (wss://) and insecure (ws://) servers
+
+## Upgrading from 1.0.0
+
+Simply download the new version and replace your existing DadLink.exe. All settings and data remain compatible.
+
+---
+
 # DadLink v1.0.0 - Initial Release 🎉
 
 ## What is DadLink?

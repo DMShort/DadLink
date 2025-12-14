@@ -41,7 +41,7 @@ public:
 
 signals:
     void loginRequested(const QString& username, const QString& password, const QString& server);
-    void registerRequested(const QString& username, const QString& password, const QString& server);
+    void registerRequested(const QString& username, const QString& password, const QString& server, bool useTls);
     void cancelRequested();
 
 private slots:

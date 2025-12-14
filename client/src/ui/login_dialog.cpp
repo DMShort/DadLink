@@ -250,8 +250,8 @@ void LoginDialog::onRegisterClicked() {
         QMessageBox::warning(this, "Invalid Password", "Password must be at least 3 characters");
         return;
     }
-    
-    emit registerRequested(username, password, server + ":" + QString::number(serverPort()));
+
+    emit registerRequested(username, password, server + ":" + QString::number(serverPort()), useTls());
     // Don't accept() yet - wait for server response
 }
 

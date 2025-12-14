@@ -203,36 +203,36 @@ int main(int argc, char *argv[]) {
     
     // Handle register button - need to keep WebSocket alive
     static std::shared_ptr<network::WebSocketClient> registrationWs;
-    
-    QObject::connect(&loginDialog, &ui::LoginDialog::registerRequested, [&](const QString& username, const QString& password, const QString& server) {
-        std::cout << "📝 Registration requested for user: " << username.toStdString() << std::endl;
-        
+
+    QObject::connect(&loginDialog, &ui::LoginDialog::registerRequested, [&](const QString& username, const QString& password, const QString& server, bool useTls) {
+        std::cout << "📝 Registration requested for user: " << username.toStdString() << " (TLS: " << (useTls ? "enabled" : "disabled") << ")" << std::endl;
+
         // Parse server address and port
         QStringList parts = server.split(":");
         std::string serverAddr = parts[0].toStdString();
         uint16_t serverPort = parts.size() > 1 ? parts[1].toUShort() : 9000;
-        
+
         // Create WebSocket client for registration (keep it alive as static)
         registrationWs = std::make_shared<network::WebSocketClient>();
-        
+
         // Set up registration callback
         registrationWs->set_register_callback([&loginDialog](bool success, const std::string& message, uint32_t user_id) {
             if (success) {
                 std::cout << "✅ Registration successful! User ID: " << user_id << std::endl;
                 QMetaObject::invokeMethod(&loginDialog, [&loginDialog, message]() {
-                    QMessageBox::information(&loginDialog, "Registration Successful", 
+                    QMessageBox::information(&loginDialog, "Registration Successful",
                         QString::fromStdString(message));
                     loginDialog.setStatusMessage("Registration successful! Now you can login.", false);
                 }, Qt::QueuedConnection);
             } else {
                 std::cerr << "❌ Registration failed: " << message << std::endl;
                 QMetaObject::invokeMethod(&loginDialog, [&loginDialog, message]() {
-                    QMessageBox::warning(&loginDialog, "Registration Failed", 
+                    QMessageBox::warning(&loginDialog, "Registration Failed",
                         QString::fromStdString(message));
                     loginDialog.setStatusMessage(QString::fromStdString(message), true);
                 }, Qt::QueuedConnection);
             }
-            
+
             // Disconnect after handling response
             QTimer::singleShot(100, []() {
                 if (registrationWs) {
@@ -241,17 +241,17 @@ int main(int argc, char *argv[]) {
                 }
             });
         });
-        
+
         // Connect and register
         loginDialog.setStatusMessage("Connecting to server...", false);
-        auto connectResult = registrationWs->connect(serverAddr, serverPort, false);
+        auto connectResult = registrationWs->connect(serverAddr, serverPort, useTls);
         if (!connectResult.is_ok()) {
             std::cerr << "❌ Failed to connect: " << connectResult.error().message() << std::endl;
             loginDialog.setStatusMessage("Failed to connect to server", true);
             registrationWs.reset();
             return;
         }
-        
+
         // Wait a moment for connection, then send registration
         QTimer::singleShot(500, [username, password]() {
             std::cout << "Sending registration request..." << std::endl;
