@@ -72,7 +72,8 @@ DadLink - Voice Communication Client
 Version: $Version
 
 ABOUT
-DadLink is a low-latency voice communication system designed for gaming.
+DadLink is a low-latency voice communication system designed for gaming
+and team coordination. Use it to communicate with your team while playing!
 
 FEATURES
 - Global hotkeys (works while gaming!)
@@ -82,14 +83,24 @@ FEATURES
 - Admin panel for management
 
 QUICK START
-1. Launch DadLink.exe
-2. Connect to your server
-   - Server: your-server-address
-   - Port: 9000
-   - Use TLS: Yes
-3. Login with your credentials
-4. Join a channel from the Voice tab
-5. Use F1-F10 to talk (works even when minimized!)
+1. Get connection details from your server administrator:
+   - Server address
+   - Port number (usually 9000)
+   - Your username and password
+
+2. Launch DadLink.exe
+
+3. Connect to your server:
+   - Enter the server address
+   - Enter the port (default: 9000)
+   - Enable "Use TLS" (recommended)
+   - Click Connect
+
+4. Login with your credentials
+
+5. Join channels from the Voice tab
+
+6. Use F1-F10 to talk (works even when minimized!)
 
 SYSTEM REQUIREMENTS
 - Windows 10/11 (64-bit)
@@ -97,11 +108,11 @@ SYSTEM REQUIREMENTS
   Download: https://aka.ms/vs/17/release/vc_redist.x64.exe
 
 TROUBLESHOOTING
-- If app won't start: Install VC++ Redistributable
-- If hotkeys don't work: Check no other app uses same keys
-- If can't connect: Check server address and firewall
+- App won't start: Install VC++ Redistributable (link above)
+- Hotkeys don't work: Try running as Administrator
+- Can't connect: Verify server address/port with your admin
 
-Support: https://github.com/DMShort/DadLink
+Support: https://github.com/DMShort/DadLink/issues
 "@
 $readme | Out-File -FilePath "$PackageDir\README.txt" -Encoding UTF8
 

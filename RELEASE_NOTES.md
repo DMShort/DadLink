@@ -39,14 +39,24 @@ DadLink is a low-latency voice communication system designed for gaming and team
 
 ## Quick Start Guide
 
-1. **Launch DadLink**
-2. **Connect to your server:**
-   - Enter your server address (e.g., `voip.yourserver.com`)
-   - Port: `9000` (default)
-   - Enable "Use TLS" for secure connection
-3. **Login** with your credentials
-4. **Join channels** from the Voice tab
-5. **Use F1-F10 keys** to talk on different channels (works even when minimized!)
+1. **Get your server details** from your DadLink server administrator:
+   - Server address
+   - Port number (usually 9000)
+   - Your username and password
+
+2. **Launch DadLink**
+
+3. **Connect to your server:**
+   - Enter the server address provided by your admin
+   - Enter the port number (default: 9000)
+   - Enable "Use TLS" (recommended)
+   - Click Connect
+
+4. **Login** with your credentials
+
+5. **Join channels** from the Voice tab
+
+6. **Use F1-F10 keys** to talk on different channels (works even when minimized!)
 
 ## Usage Tips
 
@@ -91,10 +101,7 @@ Press and hold the key to talk on that channel, release to stop.
 - Verify server address and port
 - Ensure TLS is enabled if required
 - Check firewall settings
-
-## Server Setup
-
-To run your own DadLink server, see the [Server Documentation](https://github.com/DMShort/DadLink#server-setup).
+- Contact your server administrator for connection details
 
 ## Changelog
 

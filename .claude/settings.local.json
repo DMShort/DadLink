@@ -47,7 +47,9 @@
       "Bash(docker run:*)",
       "Bash(git fetch:*)",
       "Bash(Select-String -Pattern \"Connected|HTTP\")",
-      "Bash(ls C:devVoIP-Systemdeploy*.ps1 C:devVoIP-Systemdeploy*.bat)"
+      "Bash(ls C:devVoIP-Systemdeploy*.ps1 C:devVoIP-Systemdeploy*.bat)",
+      "Bash(gh release create:*)",
+      "Bash(./client/release-package/DadLink-1.0.0-Windows-x64.zip )"
     ],
     "deny": [],
     "ask": []
