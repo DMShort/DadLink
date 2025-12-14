@@ -12,13 +12,13 @@ namespace voip::ui {
 
 /**
  * HotkeyManager - Global hotkey handler for PTT functionality
- * 
+ *
  * Features:
- * - Registers hotkeys for channels
- * - Detects key press/release globally
+ * - Registers hotkeys for channels SYSTEM-WIDE (works even when app is in background)
+ * - Detects key press/release globally using Windows low-level keyboard hook
  * - Emits signals for PTT start/stop
  * - Supports simultaneous key presses
- * 
+ *
  * Usage:
  *   hotkeyManager->registerHotkey(1, QKeySequence(Qt::Key_F1));
  *   connect(hotkeyManager, &HotkeyManager::hotkeyPressed, ...);
@@ -72,7 +72,19 @@ public:
      * Clear all hotkeys
      */
     void clearAllHotkeys();
-    
+
+    /**
+     * Handle key press from Windows hook (public for global callback)
+     * Returns true if the key was a registered hotkey (consumed)
+     */
+    bool handleKeyPress(unsigned long vkCode);
+
+    /**
+     * Handle key release from Windows hook (public for global callback)
+     * Returns true if the key was a registered hotkey (consumed)
+     */
+    bool handleKeyRelease(unsigned long vkCode);
+
 signals:
     /**
      * Emitted when a registered hotkey is pressed
@@ -89,24 +101,32 @@ signals:
      */
     void hotkeysChanged();
     
-protected:
-    /**
-     * Event filter to capture key events globally
-     */
-    bool eventFilter(QObject* obj, QEvent* event) override;
-    
 private:
+    // Convert Qt::Key to Windows virtual key code
+    int qtKeyToVirtualKey(Qt::Key key);
+
     // Map: ChannelId -> QKeySequence
     std::map<ChannelId, QKeySequence> channel_hotkeys_;
-    
+
     // Map: Qt::Key -> ChannelId (for fast lookup)
     std::map<Qt::Key, ChannelId> key_to_channel_;
-    
+
+    // Map: Windows VK code -> ChannelId
+    std::map<int, ChannelId> vk_to_channel_;
+
     // Set of currently pressed keys
     std::set<Qt::Key> pressed_keys_;
-    
-    // Parent widget (to install event filter)
+
+    // Parent widget (for getting window handle)
     QWidget* parent_widget_;
+
+    // Counter for generating unique hotkey IDs
+    int next_hotkey_id_;
+
+#ifdef _WIN32
+    // Windows keyboard hook handle (HHOOK - opaque pointer)
+    void* keyboard_hook_;
+#endif
 };
 
 } // namespace voip::ui

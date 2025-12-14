@@ -29,6 +29,7 @@ public:
 signals:
     void statusMessage(const QString& message);
     void errorOccurred(const QString& error);
+    void channelsChanged();  // Emitted when channels are created, updated, or deleted
 
 private slots:
     void onCreateChannel();

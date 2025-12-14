@@ -28,6 +28,7 @@ public:
 
     void setUserInfo(const QString& username, uint32_t userId);
     void setLoginCredentials(const QString& username, const QString& password);
+    void setServerInfo(const QString& address, uint16_t port, bool useTls);
     void setWebSocketClient(std::shared_ptr<network::WebSocketClient> wsClient);
     void setVoiceSession(std::shared_ptr<session::VoiceSession> voiceSession);
     void setUserPermissions(uint32_t permissions, uint32_t orgId = 0);
@@ -60,6 +61,9 @@ private slots:
     void onChannelHotkeyChangeRequested(ChannelId id);
     void onHotkeyPressed(ChannelId id);
     void onHotkeyReleased(ChannelId id);
+
+    // Admin panel callbacks
+    void onAdminChannelsChanged();
 
 protected:
     void keyPressEvent(QKeyEvent* event) override;
@@ -111,6 +115,10 @@ private:
     // State
     QString username_;
     QString password_;
+    QString serverAddress_;
+    uint16_t serverPort_ = 9000;
+    bool useTls_ = true;
+    QString jwtToken_;
     uint32_t userId_ = 0;
     uint32_t orgId_ = 0;
     uint32_t permissions_ = 0;

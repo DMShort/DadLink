@@ -279,15 +279,21 @@ int main(int argc, char *argv[]) {
     std::string username = loginDialog.username().toStdString();
     std::string password = loginDialog.password().toStdString();
     std::string serverAddr = loginDialog.serverAddress().toStdString();
-    
-    mainWindow->setLoginCredentials(QString::fromStdString(username), 
+
+    mainWindow->setLoginCredentials(QString::fromStdString(username),
                                     QString::fromStdString(password));
-    mainWindow->setWebSocketClient(wsClient);  // This sets up all callbacks
-    std::cout << "WebSocket client set on main window (callbacks configured)" << std::endl;
-    
-    // Connect to WebSocket server (async, will trigger callbacks)
+
+    // Pass server info to MainWindow for admin API configuration
     uint16_t serverPort = loginDialog.serverPort();
     bool useTls = loginDialog.useTls();
+    mainWindow->setServerInfo(loginDialog.serverAddress(), serverPort, useTls);
+    std::cout << "Server info passed to MainWindow: " << serverAddr << ":" << serverPort
+              << " (TLS: " << (useTls ? "enabled" : "disabled") << ")" << std::endl;
+
+    mainWindow->setWebSocketClient(wsClient);  // This sets up all callbacks
+    std::cout << "WebSocket client set on main window (callbacks configured)" << std::endl;
+
+    // Connect to WebSocket server (async, will trigger callbacks)
     std::string protocol = useTls ? "wss" : "ws";
     std::cout << "Connecting to WebSocket: " << protocol << "://" << serverAddr << ":" << serverPort << std::endl;
     auto connectResult = wsClient->connect(serverAddr, serverPort, useTls);

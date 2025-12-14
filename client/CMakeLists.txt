@@ -57,7 +57,11 @@ set(VOIP_CLIENT_SOURCES
     src/ui/admin/create_user_dialog.cpp
     src/ui/admin/edit_user_dialog.cpp
     src/ui/admin/channel_manager.cpp
+    src/ui/admin/create_channel_dialog.cpp
+    src/ui/admin/edit_channel_dialog.cpp
     src/ui/admin/role_manager.cpp
+    src/ui/admin/create_role_dialog.cpp
+    src/ui/admin/edit_role_dialog.cpp
     src/api/admin_api_client.cpp
     ${VOIP_CLIENT_RESOURCES}
 )
@@ -89,7 +93,11 @@ set(VOIP_CLIENT_HEADERS
     include/ui/admin/create_user_dialog.h
     include/ui/admin/edit_user_dialog.h
     include/ui/admin/channel_manager.h
+    include/ui/admin/create_channel_dialog.h
+    include/ui/admin/edit_channel_dialog.h
     include/ui/admin/role_manager.h
+    include/ui/admin/create_role_dialog.h
+    include/ui/admin/edit_role_dialog.h
     include/api/admin_api_client.h
 )
 

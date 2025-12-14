@@ -10,7 +10,7 @@ namespace voip::api {
 AdminApiClient::AdminApiClient(QObject* parent)
     : QObject(parent)
     , network_(new QNetworkAccessManager(this))
-    , base_url_("https://localhost:9000")
+    , base_url_("")  // Will be set dynamically by MainWindow using server info from login
 {
     // Ignore SSL errors for self-signed certificates in development
     connect(network_, &QNetworkAccessManager::sslErrors,
@@ -229,7 +229,8 @@ void AdminApiClient::updateUser(int id, const QJsonObject& user, std::function<v
     QString endpoint = QString("/api/admin/users/%1").arg(id);
     sendPutRequest(endpoint, user, [callback](const QJsonDocument& doc) {
         if (callback) {
-            callback(doc.object()["success"].toBool());
+            // Server returns UserResponse object, not {"success": true}
+            callback(doc.isObject() && doc.object().contains("id"));
         }
     });
 }
@@ -302,12 +303,13 @@ void AdminApiClient::createChannel(const QJsonObject& channel, std::function<voi
     });
 }
 
-void AdminApiClient::updateChannel(int id, const QJsonObject& channel, 
+void AdminApiClient::updateChannel(int id, const QJsonObject& channel,
                                     std::function<void(bool)> callback) {
     QString endpoint = QString("/api/admin/channels/%1").arg(id);
     sendPutRequest(endpoint, channel, [callback](const QJsonDocument& doc) {
         if (callback) {
-            callback(doc.object()["success"].toBool());
+            // Server returns ChannelResponse object, not {"success": true}
+            callback(doc.isObject() && doc.object().contains("id"));
         }
     });
 }
@@ -353,7 +355,8 @@ void AdminApiClient::updateRole(int id, const QJsonObject& role, std::function<v
     QString endpoint = QString("/api/admin/roles/%1").arg(id);
     sendPutRequest(endpoint, role, [callback](const QJsonDocument& doc) {
         if (callback) {
-            callback(doc.object()["success"].toBool());
+            // Server returns RoleResponse object, not {"success": true}
+            callback(doc.isObject() && doc.object().contains("id"));
         }
     });
 }

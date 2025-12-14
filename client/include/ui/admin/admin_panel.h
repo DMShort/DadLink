@@ -60,6 +60,12 @@ public:
      */
     std::shared_ptr<voip::api::AdminApiClient> getApiClient() const { return api_client_; }
 
+    /**
+     * @brief Get the channel manager
+     * @return Pointer to channel manager widget
+     */
+    ChannelManager* getChannelManager() const { return channel_manager_; }
+
 signals:
     void statusMessage(const QString& message);
     void errorOccurred(const QString& error);

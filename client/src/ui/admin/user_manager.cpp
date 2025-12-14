@@ -1,5 +1,6 @@
 #include "ui/admin/user_manager.h"
 #include "ui/admin/create_user_dialog.h"
+#include "ui/admin/edit_user_dialog.h"
 #include "api/admin_api_client.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -247,11 +248,45 @@ void UserManager::onEditUser() {
 }
 
 void UserManager::showUserDialog(int user_id) {
-    // TODO: Implement user edit dialog
-    if (user_id < 0) {
-        emit statusMessage("User creation dialog - Coming Soon");
-    } else {
-        emit statusMessage(QString("Edit user %1 dialog - Coming Soon").arg(user_id));
+    if (!apiClient_) {
+        emit errorOccurred("No API client available");
+        return;
+    }
+
+    // Find the user in the cached data
+    QJsonObject user_obj;
+    for (const QJsonValue& value : all_users_) {
+        QJsonObject user = value.toObject();
+        if (user["id"].toInt() == user_id) {
+            user_obj = user;
+            break;
+        }
+    }
+
+    if (user_obj.isEmpty()) {
+        emit errorOccurred(QString("User %1 not found").arg(user_id));
+        return;
+    }
+
+    // Create and show edit dialog
+    EditUserDialog dialog(user_obj, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QJsonObject updated_data = dialog.getUpdatedData();
+
+        if (!updated_data.isEmpty()) {
+            std::cout << "Updating user " << user_id << std::endl;
+
+            apiClient_->updateUser(user_id, updated_data, [this, user_id](bool success) {
+                if (success) {
+                    emit statusMessage(QString("User %1 updated successfully").arg(user_id));
+                    refresh();
+                } else {
+                    emit errorOccurred(QString("Failed to update user %1").arg(user_id));
+                }
+            });
+        } else {
+            emit statusMessage("No changes made");
+        }
     }
 }
 

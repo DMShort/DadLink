@@ -1,4 +1,6 @@
 #include "ui/admin/role_manager.h"
+#include "ui/admin/create_role_dialog.h"
+#include "ui/admin/edit_role_dialog.h"
 #include "api/admin_api_client.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -156,15 +158,73 @@ QString RoleManager::permissionsToString(uint32_t permissions) const {
 }
 
 void RoleManager::onCreateRole() {
-    // TODO: Show create role dialog
-    emit statusMessage("Create role dialog - Coming Soon");
+    if (!apiClient_) {
+        emit errorOccurred("No API client available");
+        return;
+    }
+
+    CreateRoleDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QJsonObject role_data = dialog.getRoleData();
+
+        std::cout << "Creating role: " << role_data["name"].toString().toStdString() << std::endl;
+
+        apiClient_->createRole(role_data, [this, role_data](int role_id) {
+            if (role_id > 0) {
+                emit statusMessage(QString("Role '%1' created successfully (ID: %2)")
+                                 .arg(role_data["name"].toString())
+                                 .arg(role_id));
+                refresh();
+            } else {
+                emit errorOccurred("Failed to create role");
+            }
+        });
+    }
 }
 
 void RoleManager::onEditRole() {
-    // TODO: Show edit role dialog
     int role_id = getSelectedRoleId();
-    if (role_id >= 0) {
-        emit statusMessage(QString("Edit role %1 dialog - Coming Soon").arg(role_id));
+    if (role_id < 0) return;
+
+    if (!apiClient_) {
+        emit errorOccurred("No API client available");
+        return;
+    }
+
+    // Find the role in the cached data
+    QJsonObject role_obj;
+    for (const QJsonValue& value : all_roles_) {
+        QJsonObject role = value.toObject();
+        if (role["id"].toInt() == role_id) {
+            role_obj = role;
+            break;
+        }
+    }
+
+    if (role_obj.isEmpty()) {
+        emit errorOccurred(QString("Role %1 not found").arg(role_id));
+        return;
+    }
+
+    // Create and show edit dialog
+    EditRoleDialog dialog(role_obj, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QJsonObject updated_data = dialog.getUpdatedData();
+
+        if (!updated_data.isEmpty()) {
+            std::cout << "Updating role " << role_id << std::endl;
+
+            apiClient_->updateRole(role_id, updated_data, [this, role_id](bool success) {
+                if (success) {
+                    emit statusMessage(QString("Role %1 updated successfully").arg(role_id));
+                    refresh();
+                } else {
+                    emit errorOccurred(QString("Failed to update role %1").arg(role_id));
+                }
+            });
+        } else {
+            emit statusMessage("No changes made");
+        }
     }
 }
 

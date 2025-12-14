@@ -1,4 +1,6 @@
 #include "ui/admin/channel_manager.h"
+#include "ui/admin/create_channel_dialog.h"
+#include "ui/admin/edit_channel_dialog.h"
 #include "api/admin_api_client.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -103,10 +105,11 @@ void ChannelManager::loadChannels() {
 
 void ChannelManager::onChannelsLoaded(const QJsonArray& channels) {
     std::cout << "🎙️ Received " << channels.size() << " channels" << std::endl;
-    
+
     all_channels_ = channels;
     buildChannelTree(channels);
     emit statusMessage(QString("Loaded %1 channels").arg(channels.size()));
+    emit channelsChanged();  // Notify that channels have been updated
 }
 
 void ChannelManager::buildChannelTree(const QJsonArray& channels) {
@@ -154,15 +157,73 @@ void ChannelManager::populateChannelTree(const QJsonArray& channels) {
 }
 
 void ChannelManager::onCreateChannel() {
-    // TODO: Show create channel dialog
-    emit statusMessage("Create channel dialog - Coming Soon");
+    if (!apiClient_) {
+        emit errorOccurred("No API client available");
+        return;
+    }
+
+    CreateChannelDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QJsonObject channel_data = dialog.getChannelData();
+
+        std::cout << "Creating channel: " << channel_data["name"].toString().toStdString() << std::endl;
+
+        apiClient_->createChannel(channel_data, [this, channel_data](int channel_id) {
+            if (channel_id > 0) {
+                emit statusMessage(QString("Channel '%1' created successfully (ID: %2)")
+                                 .arg(channel_data["name"].toString())
+                                 .arg(channel_id));
+                refresh();
+            } else {
+                emit errorOccurred("Failed to create channel");
+            }
+        });
+    }
 }
 
 void ChannelManager::onEditChannel() {
-    // TODO: Show edit channel dialog
     int channel_id = getSelectedChannelId();
-    if (channel_id >= 0) {
-        emit statusMessage(QString("Edit channel %1 dialog - Coming Soon").arg(channel_id));
+    if (channel_id < 0) return;
+
+    if (!apiClient_) {
+        emit errorOccurred("No API client available");
+        return;
+    }
+
+    // Find the channel in the cached data
+    QJsonObject channel_obj;
+    for (const QJsonValue& value : all_channels_) {
+        QJsonObject channel = value.toObject();
+        if (channel["id"].toInt() == channel_id) {
+            channel_obj = channel;
+            break;
+        }
+    }
+
+    if (channel_obj.isEmpty()) {
+        emit errorOccurred(QString("Channel %1 not found").arg(channel_id));
+        return;
+    }
+
+    // Create and show edit dialog
+    EditChannelDialog dialog(channel_obj, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QJsonObject updated_data = dialog.getUpdatedData();
+
+        if (!updated_data.isEmpty()) {
+            std::cout << "Updating channel " << channel_id << std::endl;
+
+            apiClient_->updateChannel(channel_id, updated_data, [this, channel_id](bool success) {
+                if (success) {
+                    emit statusMessage(QString("Channel %1 updated successfully").arg(channel_id));
+                    refresh();
+                } else {
+                    emit errorOccurred(QString("Failed to update channel %1").arg(channel_id));
+                }
+            });
+        } else {
+            emit statusMessage("No changes made");
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 #include "ui/main_window.h"
 #include "ui/settings_dialog.h"
+#include "ui/admin/channel_manager.h"
 #include "api/admin_api_client.h"
 #include "crypto/key_exchange.h"
 #include "crypto/srtp_session.h"
@@ -249,6 +250,15 @@ void MainWindow::setUserInfo(const QString& username, uint32_t userId) {
 void MainWindow::setLoginCredentials(const QString& username, const QString& password) {
     username_ = username;
     password_ = password;
+}
+
+void MainWindow::setServerInfo(const QString& address, uint16_t port, bool useTls) {
+    serverAddress_ = address;
+    serverPort_ = port;
+    useTls_ = useTls;
+
+    std::cout << "Server info set: " << address.toStdString()
+              << ":" << port << " (TLS: " << (useTls ? "enabled" : "disabled") << ")" << std::endl;
 }
 
 void MainWindow::setWebSocketClient(std::shared_ptr<network::WebSocketClient> wsClient) {
@@ -1031,11 +1041,17 @@ void MainWindow::updateChannelWidgets() {
 void MainWindow::setupAdminTab() {
     // Create admin panel
     adminPanel_ = new admin::AdminPanel(this);
-    
+
     // Add admin tab (hidden by default until permissions are set)
     adminTabIndex_ = mainTabs_->addTab(adminPanel_, "🔧 Admin");
     mainTabs_->setTabVisible(adminTabIndex_, false);
-    
+
+    // Connect channel manager signals to refresh voice tab
+    if (adminPanel_->getChannelManager()) {
+        connect(adminPanel_->getChannelManager(), &admin::ChannelManager::channelsChanged,
+                this, &MainWindow::onAdminChannelsChanged);
+    }
+
     addLogMessage("Admin panel initialized (hidden until admin login)");
 }
 
@@ -1063,17 +1079,104 @@ void MainWindow::setUserPermissions(uint32_t permissions, uint32_t orgId) {
     // Set admin context if admin panel exists
     if (isAdmin_ && adminPanel_) {
         adminPanel_->setUserContext(userId_, orgId_, permissions_);
-        
-        // Set API base URL (assuming server on localhost:9000 with TLS)
+
+        // Set API base URL using server info from login
         auto apiClient = adminPanel_->getApiClient();
         if (apiClient) {
-            apiClient->setBaseUrl("https://localhost:9000");
-            // TODO: Set JWT token when available
+            QString protocol = useTls_ ? "https" : "http";
+            QString baseUrl = QString("%1://%2:%3")
+                .arg(protocol)
+                .arg(serverAddress_)
+                .arg(serverPort_);
+
+            std::cout << "Setting admin API base URL: " << baseUrl.toStdString() << std::endl;
+            apiClient->setBaseUrl(baseUrl);
+
+            // Set JWT token if available
+            if (!jwtToken_.isEmpty()) {
+                apiClient->setAuthToken(jwtToken_);
+                std::cout << "JWT token set for admin API" << std::endl;
+            } else {
+                std::cout << "Warning: No JWT token available for admin API" << std::endl;
+            }
         }
-        
+
         addLogMessage(QString("Admin permissions set - Org: %1, Perms: 0x%2")
                      .arg(orgId_).arg(permissions_, 0, 16));
     }
+}
+
+void MainWindow::onAdminChannelsChanged() {
+    // Reload channels from server when admin creates/edits/deletes channels
+    addLogMessage("📡 Channels updated via admin panel - refreshing voice tab...");
+
+    auto apiClient = adminPanel_->getApiClient();
+    if (!apiClient) {
+        addLogMessage("⚠️ Cannot refresh channels: No API client available");
+        return;
+    }
+
+    // Get channels from server
+    apiClient->getChannels([this](const QJsonArray& channels) {
+        // Clear existing channel widgets
+        for (auto& pair : channelWidgets_) {
+            delete pair.second;
+        }
+        channelWidgets_.clear();
+
+        // Get layout from container
+        auto* layout = channelContainer_->layout();
+
+        // Remove all widgets from layout except the stretch at the end
+        QLayoutItem* item;
+        while ((item = layout->takeAt(0)) != nullptr) {
+            delete item->widget();
+            delete item;
+        }
+
+        // Recreate channel widgets from server data
+        int hotkeyIndex = 0;
+        Qt::Key hotkeys[] = {Qt::Key_F1, Qt::Key_F2, Qt::Key_F3, Qt::Key_F4, Qt::Key_F5,
+                            Qt::Key_F6, Qt::Key_F7, Qt::Key_F8, Qt::Key_F9, Qt::Key_F10};
+
+        for (const QJsonValue& value : channels) {
+            QJsonObject channel = value.toObject();
+            ChannelId id = channel["id"].toInt();
+            QString name = channel["name"].toString();
+
+            // Create channel widget
+            auto* widget = new ChannelWidget(id, name, this);
+
+            // Assign hotkey (cycle through F1-F10)
+            if (hotkeyIndex < 10) {
+                Qt::Key hotkey = hotkeys[hotkeyIndex];
+                hotkeyManager_->registerHotkey(id, QKeySequence(hotkey));
+                widget->setHotkey(QKeySequence(hotkey));
+                hotkeyIndex++;
+            }
+
+            // Connect signals
+            connect(widget, &ChannelWidget::listenToggled,
+                    this, &MainWindow::onChannelListenToggled);
+            connect(widget, &ChannelWidget::muteToggled,
+                    this, &MainWindow::onChannelMuteToggled);
+            connect(widget, &ChannelWidget::transmitSelected,
+                    this, &MainWindow::onChannelTransmitSelected);
+            connect(widget, &ChannelWidget::hotkeyChangeRequested,
+                    this, &MainWindow::onChannelHotkeyChangeRequested);
+
+            // Store widget
+            channelWidgets_[id] = widget;
+
+            // Add to layout
+            layout->addWidget(widget);
+        }
+
+        // Add stretch at the end
+        layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
+
+        addLogMessage(QString("✅ Reloaded %1 channels from server").arg(channels.size()));
+    });
 }
 
 } // namespace voip::ui
