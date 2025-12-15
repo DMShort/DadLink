@@ -104,13 +104,12 @@ QUICK START
 
 SYSTEM REQUIREMENTS
 - Windows 10/11 (64-bit)
-- Visual C++ Redistributable 2015-2022
-  Download: https://aka.ms/vs/17/release/vc_redist.x64.exe
+- No additional software required! (fully portable)
 
 TROUBLESHOOTING
-- App won't start: Install VC++ Redistributable (link above)
 - Hotkeys don't work: Try running as Administrator
 - Can't connect: Verify server address/port with your admin
+- Audio issues: Check Windows audio device settings
 
 Support: https://github.com/DMShort/DadLink/issues
 "@

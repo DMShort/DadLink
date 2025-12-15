@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
 project(voip-client VERSION 0.1.0 LANGUAGES CXX)
 
+# Static link MSVC runtime for portable deployment (no VC++ redistributable needed)
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    # Uses /MT for Release (static runtime) instead of /MD (dynamic runtime)
+    # This embeds the C++ runtime into the executable (~800KB larger)
+    # Result: Fully portable, no external VC++ installation required
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

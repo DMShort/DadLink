@@ -1,3 +1,24 @@
+# DadLink v1.0.2 - Portable Release 🎉
+
+## What's New
+
+### Fully Portable - No VC++ Required!
+- ✨ **True portability** - No Visual C++ Redistributable installation needed
+- Application now uses static MSVC runtime (/MT)
+- Extract ZIP and run - that's it!
+- Perfect for USB drives, network shares, or any portable use case
+- Same 70MB package size
+
+### Includes All Previous Fixes
+- Registration TLS bug fix from v1.0.1
+- All features from v1.0.0
+
+## Upgrading from 1.0.0 or 1.0.1
+
+Download the new version and replace your existing DadLink folder. All settings remain compatible.
+
+---
+
 # DadLink v1.0.1 - Bug Fix Release
 
 ## What's Fixed
@@ -96,7 +117,7 @@ Press and hold the key to talk on that channel, release to stop.
 - **Memory**: 100 MB RAM
 - **Disk**: 100 MB free space
 - **Network**: Broadband internet connection
-- **Prerequisites**: Visual C++ Redistributable 2015-2022
+- **Prerequisites**: None! Fully portable (v1.0.2+)
 
 ## Known Issues
 
@@ -106,7 +127,9 @@ Press and hold the key to talk on that channel, release to stop.
 ## Troubleshooting
 
 **Application won't start:**
-- Install the [VC++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe)
+- Check Windows Defender/antivirus (may need to add exception)
+- Try running as Administrator
+- For v1.0.0-1.0.1: Install the [VC++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe)
 
 **Hotkeys not working:**
 - Ensure DadLink is running (check system tray)
