@@ -54,14 +54,22 @@ foreach ($pluginDir in $PluginDirs) {
     }
 }
 
-# Copy OpenSSL DLLs
-Write-Host "Copying OpenSSL libraries..."
-$OpenSslDlls = @("libcrypto-3-x64.dll", "libssl-3-x64.dll")
-foreach ($dll in $OpenSslDlls) {
-    $sourcePath = "$QtDir\bin\$dll"
+# Copy vcpkg DLLs (OpenSSL, Opus, PortAudio)
+Write-Host "Copying vcpkg libraries..."
+$VcpkgDir = "C:\vcpkg\installed\x64-windows-static-runtime\bin"
+$VcpkgDlls = @(
+    "libcrypto-3-x64.dll",
+    "libssl-3-x64.dll",
+    "opus.dll",
+    "portaudio.dll"
+)
+foreach ($dll in $VcpkgDlls) {
+    $sourcePath = "$VcpkgDir\$dll"
     if (Test-Path $sourcePath) {
         Copy-Item $sourcePath -Destination $PackageDir
         Write-Host "  Copied $dll"
+    } else {
+        Write-Host "  Warning: $dll not found at $sourcePath" -ForegroundColor Yellow
     }
 }
 
