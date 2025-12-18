@@ -46,6 +46,7 @@ set(VOIP_CLIENT_SOURCES
     src/ui/main_window.cpp
     src/ui/settings_dialog.cpp
     src/ui/hotkey_manager.cpp
+    src/ui/hotkey_input_dialog.cpp
     src/ui/channel_widget.cpp
     src/audio/audio_engine.cpp
     src/audio/opus_codec.cpp
@@ -79,6 +80,7 @@ set(VOIP_CLIENT_HEADERS
     include/ui/main_window.h
     include/ui/settings_dialog.h
     include/ui/hotkey_manager.h
+    include/ui/hotkey_input_dialog.h
     include/ui/channel_widget.h
     include/audio/audio_engine.h
     include/audio/opus_codec.h

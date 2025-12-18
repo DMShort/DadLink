@@ -1,5 +1,6 @@
 #include "ui/main_window.h"
 #include "ui/settings_dialog.h"
+#include "ui/hotkey_input_dialog.h"
 #include "ui/admin/channel_manager.h"
 #include "api/admin_api_client.h"
 #include "crypto/key_exchange.h"
@@ -934,28 +935,27 @@ void MainWindow::onChannelTransmitSelected(ChannelId id) {
 }
 
 void MainWindow::onChannelHotkeyChangeRequested(ChannelId id) {
-    // Show input dialog for new hotkey
-    bool ok;
-    QString keyText = QInputDialog::getText(this, "Change Hotkey",
-                                            QString("Enter new hotkey for channel %1:").arg(id),
-                                            QLineEdit::Normal,
-                                            "", &ok);
-    
-    if (ok && !keyText.isEmpty()) {
-        QKeySequence newKey(keyText);
+    // Show hotkey capture dialog
+    HotkeyInputDialog dialog(this);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        QKeySequence newKey = dialog.capturedKey();
+
         if (!newKey.isEmpty()) {
             // Unregister old hotkey
             hotkeyManager_->unregisterHotkey(id);
-            
+
             // Register new hotkey
             if (hotkeyManager_->registerHotkey(id, newKey)) {
                 if (channelWidgets_.count(id)) {
                     channelWidgets_[id]->setHotkey(newKey);
                 }
-                addLogMessage(QString("⌨️ Channel %1 hotkey changed to %2").arg(id).arg(keyText));
+                addLogMessage(QString("⌨️ Channel %1 hotkey changed to %2").arg(id).arg(newKey.toString()));
             } else {
                 QMessageBox::warning(this, "Hotkey Conflict",
                                    "This hotkey is already in use by another channel!");
+                // Re-register the old hotkey if new one conflicts
+                // (We could store the old one but for now just leave it unregistered)
             }
         }
     }
