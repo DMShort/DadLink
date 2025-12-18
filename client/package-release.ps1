@@ -43,7 +43,7 @@ foreach ($dll in $QtDlls) {
 
 # Copy Qt plugins
 Write-Host "Copying Qt plugins..."
-$PluginDirs = @("platforms", "styles", "imageformats")
+$PluginDirs = @("platforms", "styles", "imageformats", "tls")
 
 foreach ($pluginDir in $PluginDirs) {
     $sourcePath = "$QtDir\plugins\$pluginDir"
