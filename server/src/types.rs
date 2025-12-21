@@ -157,6 +157,7 @@ pub enum ControlMessage {
     Ping {
         timestamp: i64,
     },
+    RequestAllChannelRosters,
 
     // Admin/Management (Client to server)
     AssignRole {
@@ -220,6 +221,9 @@ pub enum ControlMessage {
         channel_id: ChannelId,
         user_id: UserId,
     },
+    AllChannelRosters {
+        channels: Vec<ChannelRosterInfo>,
+    },
     Pong {
         timestamp: i64,
         server_time: i64,
@@ -246,4 +250,11 @@ pub struct UserInfo {
     pub id: UserId,
     pub name: String,
     pub speaking: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChannelRosterInfo {
+    pub channel_id: ChannelId,
+    pub channel_name: String,
+    pub users: Vec<UserInfo>,
 }

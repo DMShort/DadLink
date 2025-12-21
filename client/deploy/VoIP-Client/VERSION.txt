@@ -1,5 +1,5 @@
 VoIP Client v0.1.0
-Build Date: Sun 14/12/2025  7:45:06.64
+Build Date: Sun 21/12/2025  8:56:55.27
 
 Components:
 - Qt 6.10.1

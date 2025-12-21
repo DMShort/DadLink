@@ -1,5 +1,5 @@
 use crate::error::{Result, VoipError};
-use crate::types::{ControlMessage, Session, UserInfo, UserId, RoleId};
+use crate::types::{ChannelRosterInfo, ControlMessage, Session, UserInfo, UserId, RoleId};
 use crate::auth;
 use crate::channel_manager::ChannelManager;
 use crate::{
@@ -707,6 +707,78 @@ async fn handle_control_message(
                 server_time: chrono::Utc::now().timestamp(),
             };
             send_message(socket, &response).await?;
+            Ok(true)
+        }
+
+        ControlMessage::RequestAllChannelRosters => {
+            if !*authenticated {
+                let response = ControlMessage::Error {
+                    code: "not_authenticated".to_string(),
+                    message: "Must authenticate first".to_string(),
+                };
+                send_message(socket, &response).await?;
+                return Ok(true);
+            }
+
+            let sess = match session {
+                Some(ref s) => s,
+                None => {
+                    let response = ControlMessage::Error {
+                        code: "no_session".to_string(),
+                        message: "No session found".to_string(),
+                    };
+                    send_message(socket, &response).await?;
+                    return Ok(true);
+                }
+            };
+
+            info!("User {} (ID: {}) requesting all channel rosters", sess.username, sess.user_id);
+
+            // Get all channels from the database
+            let all_channels = match state.channel_repo.get_channels_by_org(sess.org_id).await {
+                Ok(channels) => channels,
+                Err(e) => {
+                    error!("Error fetching channels: {:?}", e);
+                    let response = ControlMessage::Error {
+                        code: "internal_error".to_string(),
+                        message: "Failed to fetch channels".to_string(),
+                    };
+                    send_message(socket, &response).await?;
+                    return Ok(true);
+                }
+            };
+
+            // Build roster list for channels user has JOIN permission for
+            let mut rosters = Vec::new();
+            for channel in all_channels {
+                // Check if user has JOIN permission for this channel
+                match state.permission_checker.can_join_channel(sess.user_id, sess.org_id, channel.id).await {
+                    Ok(true) => {
+                        // User has permission - include this channel's roster
+                        let users = state.channel_manager.get_channel_users(channel.id).await;
+                        rosters.push(ChannelRosterInfo {
+                            channel_id: channel.id,
+                            channel_name: channel.name,
+                            users,
+                        });
+                    }
+                    Ok(false) => {
+                        // User doesn't have permission - skip this channel
+                    }
+                    Err(e) => {
+                        warn!("Error checking permission for channel {}: {:?}", channel.id, e);
+                        // Skip on error
+                    }
+                }
+            }
+
+            // Send response with all channel rosters
+            let response = ControlMessage::AllChannelRosters {
+                channels: rosters.clone(),
+            };
+            send_message(socket, &response).await?;
+            info!("✅ Sent rosters for {} channels to user {}", rosters.len(), sess.username);
+
             Ok(true)
         }
 

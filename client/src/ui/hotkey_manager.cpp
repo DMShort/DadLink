@@ -15,21 +15,15 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
         KBDLLHOOKSTRUCT* kb = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
 
         if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
-            // Key pressed
-            if (g_hotkeyManager->handleKeyPress(kb->vkCode)) {
-                // Consume the event if it's a registered hotkey
-                return 1;
-            }
+            // Key pressed - trigger hotkey but DON'T consume event
+            g_hotkeyManager->handleKeyPress(kb->vkCode);
         } else if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
-            // Key released
-            if (g_hotkeyManager->handleKeyRelease(kb->vkCode)) {
-                // Consume the event if it's a registered hotkey
-                return 1;
-            }
+            // Key released - trigger hotkey but DON'T consume event
+            g_hotkeyManager->handleKeyRelease(kb->vkCode);
         }
     }
 
-    // Pass to next hook in chain
+    // Always pass to next hook in chain (don't block keys from other apps)
     return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }
 #endif
@@ -79,8 +73,11 @@ bool HotkeyManager::registerHotkey(ChannelId channel_id, const QKeySequence& key
         return false;
     }
 
-    // Extract Qt::Key from QKeySequence
-    Qt::Key qtKey = static_cast<Qt::Key>(key[0].key());
+    // Extract Qt::Key and modifiers from QKeySequence
+    // The key[0] contains both the key code and modifier flags (including KeypadModifier)
+    int keyWithModifiers = key[0].toCombined();
+    Qt::Key qtKey = static_cast<Qt::Key>(keyWithModifiers & ~Qt::KeyboardModifierMask);
+    Qt::KeyboardModifiers modifiers = static_cast<Qt::KeyboardModifiers>(keyWithModifiers & Qt::KeyboardModifierMask);
 
     // Check if this key is already assigned to another channel
     auto it = key_to_channel_.find(qtKey);
@@ -92,18 +89,21 @@ bool HotkeyManager::registerHotkey(ChannelId channel_id, const QKeySequence& key
     // Unregister old hotkey if channel had one
     auto old_it = channel_hotkeys_.find(channel_id);
     if (old_it != channel_hotkeys_.end()) {
-        Qt::Key old_key = static_cast<Qt::Key>(old_it->second[0].key());
+        int oldKeyWithModifiers = old_it->second[0].toCombined();
+        Qt::Key old_key = static_cast<Qt::Key>(oldKeyWithModifiers & ~Qt::KeyboardModifierMask);
+        Qt::KeyboardModifiers oldModifiers = static_cast<Qt::KeyboardModifiers>(oldKeyWithModifiers & Qt::KeyboardModifierMask);
+
         key_to_channel_.erase(old_key);
 
         // Remove from VK code map
-        int oldVk = qtKeyToVirtualKey(old_key);
+        int oldVk = qtKeyToVirtualKey(old_key, oldModifiers);
         if (oldVk != 0) {
             vk_to_channel_.erase(oldVk);
         }
     }
 
-    // Convert to VK code
-    int vkCode = qtKeyToVirtualKey(qtKey);
+    // Convert to VK code (pass modifiers to handle numpad keys)
+    int vkCode = qtKeyToVirtualKey(qtKey, modifiers);
     if (vkCode == 0) {
         std::cerr << "❌ Cannot map Qt key to Windows VK code\n";
         return false;
@@ -127,12 +127,15 @@ void HotkeyManager::unregisterHotkey(ChannelId channel_id) {
         return;  // Not registered
     }
 
-    // Remove from key_to_channel map
-    Qt::Key qtKey = static_cast<Qt::Key>(it->second[0].key());
+    // Extract key and modifiers
+    int keyWithModifiers = it->second[0].toCombined();
+    Qt::Key qtKey = static_cast<Qt::Key>(keyWithModifiers & ~Qt::KeyboardModifierMask);
+    Qt::KeyboardModifiers modifiers = static_cast<Qt::KeyboardModifiers>(keyWithModifiers & Qt::KeyboardModifierMask);
+
     key_to_channel_.erase(qtKey);
 
     // Remove from VK code map
-    int vkCode = qtKeyToVirtualKey(qtKey);
+    int vkCode = qtKeyToVirtualKey(qtKey, modifiers);
     if (vkCode != 0) {
         vk_to_channel_.erase(vkCode);
     }
@@ -201,7 +204,7 @@ bool HotkeyManager::handleKeyPress(DWORD vkCode) {
             emit hotkeyPressed(channel_id);
         }
 
-        return true;  // Event handled (hotkey consumed)
+        return true;  // Hotkey was recognized
     }
 
     return false;  // Not a registered hotkey
@@ -221,22 +224,30 @@ bool HotkeyManager::handleKeyRelease(DWORD vkCode) {
 
         emit hotkeyReleased(channel_id);
 
-        return true;  // Event handled (hotkey consumed)
+        return true;  // Hotkey was recognized
     }
 
     return false;  // Not a registered hotkey
 }
 
-int HotkeyManager::qtKeyToVirtualKey(Qt::Key key) {
+int HotkeyManager::qtKeyToVirtualKey(Qt::Key key, Qt::KeyboardModifiers modifiers) {
     // Map Qt keys to Windows virtual key codes
+    // Check for numpad modifier to differentiate numpad keys from main keyboard
+
     // F1-F12 keys
     if (key >= Qt::Key_F1 && key <= Qt::Key_F12) {
         return VK_F1 + (key - Qt::Key_F1);
     }
 
-    // Number keys (0-9)
+    // Number keys (0-9) - check if from numpad
     if (key >= Qt::Key_0 && key <= Qt::Key_9) {
-        return '0' + (key - Qt::Key_0);
+        if (modifiers & Qt::KeypadModifier) {
+            // Numpad keys
+            return VK_NUMPAD0 + (key - Qt::Key_0);
+        } else {
+            // Main keyboard number keys
+            return '0' + (key - Qt::Key_0);
+        }
     }
 
     // Letter keys (A-Z)
@@ -261,17 +272,6 @@ int HotkeyManager::qtKeyToVirtualKey(Qt::Key key) {
         case Qt::Key_Right: return VK_RIGHT;
         case Qt::Key_Up: return VK_UP;
         case Qt::Key_Down: return VK_DOWN;
-        // Numpad keys
-        case Qt::Key_0 + Qt::KeypadModifier: return VK_NUMPAD0;
-        case Qt::Key_1 + Qt::KeypadModifier: return VK_NUMPAD1;
-        case Qt::Key_2 + Qt::KeypadModifier: return VK_NUMPAD2;
-        case Qt::Key_3 + Qt::KeypadModifier: return VK_NUMPAD3;
-        case Qt::Key_4 + Qt::KeypadModifier: return VK_NUMPAD4;
-        case Qt::Key_5 + Qt::KeypadModifier: return VK_NUMPAD5;
-        case Qt::Key_6 + Qt::KeypadModifier: return VK_NUMPAD6;
-        case Qt::Key_7 + Qt::KeypadModifier: return VK_NUMPAD7;
-        case Qt::Key_8 + Qt::KeypadModifier: return VK_NUMPAD8;
-        case Qt::Key_9 + Qt::KeypadModifier: return VK_NUMPAD9;
         default:
             // std::cerr << "⚠️ Unmapped Qt key: " << key << "\n";
             return 0;
@@ -290,8 +290,9 @@ bool HotkeyManager::handleKeyRelease(DWORD vkCode) {
     return false;
 }
 
-int HotkeyManager::qtKeyToVirtualKey(Qt::Key key) {
+int HotkeyManager::qtKeyToVirtualKey(Qt::Key key, Qt::KeyboardModifiers modifiers) {
     Q_UNUSED(key);
+    Q_UNUSED(modifiers);
     return 0;
 }
 #endif

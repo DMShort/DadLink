@@ -109,7 +109,9 @@ void ChannelManager::onChannelsLoaded(const QJsonArray& channels) {
     all_channels_ = channels;
     buildChannelTree(channels);
     emit statusMessage(QString("Loaded %1 channels").arg(channels.size()));
-    emit channelsChanged();  // Notify that channels have been updated
+    // Note: Don't emit channelsChanged() here - only emit when channels are actually
+    // created/edited/deleted, not just when refreshing the list. Otherwise it causes
+    // the voice tab to rebuild all widgets and lose user's listening state.
 }
 
 void ChannelManager::buildChannelTree(const QJsonArray& channels) {
@@ -174,6 +176,7 @@ void ChannelManager::onCreateChannel() {
                                  .arg(channel_data["name"].toString())
                                  .arg(channel_id));
                 refresh();
+                emit channelsChanged();  // Notify voice tab to rebuild channel widgets
             } else {
                 emit errorOccurred("Failed to create channel");
             }
@@ -217,6 +220,7 @@ void ChannelManager::onEditChannel() {
                 if (success) {
                     emit statusMessage(QString("Channel %1 updated successfully").arg(channel_id));
                     refresh();
+                    emit channelsChanged();  // Notify voice tab to rebuild channel widgets
                 } else {
                     emit errorOccurred(QString("Failed to update channel %1").arg(channel_id));
                 }
@@ -242,6 +246,7 @@ void ChannelManager::onDeleteChannel() {
             if (success) {
                 emit statusMessage(QString("Channel %1 deleted").arg(channel_id));
                 refresh();
+                emit channelsChanged();  // Notify voice tab to rebuild channel widgets
             } else {
                 emit errorOccurred(QString("Failed to delete channel %1").arg(channel_id));
             }

@@ -28,6 +28,7 @@ using UserJoinedCallback = std::function<void(const protocol::UserJoinedNotifica
 using UserLeftCallback = std::function<void(const protocol::UserLeftNotification&)>;
 using ErrorCallback = std::function<void(const protocol::ErrorMessage&)>;
 using KeyExchangeInitCallback = std::function<void(const protocol::KeyExchangeInit&)>;
+using AllChannelRostersCallback = std::function<void(const protocol::AllChannelRostersResponse&)>;
 
 /**
  * WebSocketClient - Handles WebSocket control channel
@@ -96,9 +97,20 @@ public:
                               const std::string& password = "");
     
     /**
-     * Leave current channel
+     * Leave current channel (legacy single-channel)
      */
     Result<void> leave_channel();
+
+    /**
+     * Leave a specific channel (multi-channel)
+     */
+    Result<void> leave_channel(ChannelId channel_id);
+
+    /**
+     * Request all channel rosters from server
+     * Server will send rosters for all channels user has permission to see
+     */
+    Result<void> request_all_channel_rosters();
 
     /**
      * Send key exchange response to server
@@ -143,6 +155,7 @@ public:
     void set_user_left_callback(UserLeftCallback callback);
     void set_error_callback(ErrorCallback callback);
     void set_key_exchange_init_callback(KeyExchangeInitCallback callback);
+    void set_all_channel_rosters_callback(AllChannelRostersCallback callback);
     
     /**
      * Get statistics
@@ -171,6 +184,7 @@ private:
     void handle_user_left(const std::string& json);
     void handle_error(const std::string& json);
     void handle_key_exchange_init(const std::string& json);
+    void handle_all_channel_rosters(const std::string& json);
     
     // Send message helpers
     Result<void> send_message(protocol::MessageType type, const std::string& json);
@@ -202,7 +216,8 @@ private:
     UserLeftCallback on_user_left_cb_;
     ErrorCallback on_error_cb_;
     KeyExchangeInitCallback on_key_exchange_init_cb_;
-    
+    AllChannelRostersCallback on_all_channel_rosters_cb_;
+
     mutable std::mutex callbacks_mutex_;
     
     // Statistics

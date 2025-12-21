@@ -103,7 +103,8 @@ signals:
     
 private:
     // Convert Qt::Key to Windows virtual key code
-    int qtKeyToVirtualKey(Qt::Key key);
+    // Modifiers parameter is used to differentiate numpad keys from main keyboard
+    int qtKeyToVirtualKey(Qt::Key key, Qt::KeyboardModifiers modifiers = Qt::NoModifier);
 
     // Map: ChannelId -> QKeySequence
     std::map<ChannelId, QKeySequence> channel_hotkeys_;

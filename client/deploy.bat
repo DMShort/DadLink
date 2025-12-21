@@ -41,12 +41,12 @@ C:\Qt\6.10.1\msvc2022_64\bin\windeployqt.exe ^
     --force
 
 echo [4/7] Copying audio libraries (Opus, PortAudio)...
-copy /Y C:\vcpkg\installed\x64-windows\bin\opus.dll "%DEPLOY_DIR%\" >nul
-copy /Y C:\vcpkg\installed\x64-windows\bin\portaudio.dll "%DEPLOY_DIR%\" >nul
+copy /Y C:\vcpkg\installed\x64-windows-static-runtime\bin\opus.dll "%DEPLOY_DIR%\" >nul
+copy /Y C:\vcpkg\installed\x64-windows-static-runtime\bin\portaudio.dll "%DEPLOY_DIR%\" >nul
 
 echo [5/7] Copying OpenSSL libraries (for SRTP encryption)...
-copy /Y C:\vcpkg\installed\x64-windows\bin\libcrypto-3-x64.dll "%DEPLOY_DIR%\" >nul
-copy /Y C:\vcpkg\installed\x64-windows\bin\libssl-3-x64.dll "%DEPLOY_DIR%\" >nul
+copy /Y C:\vcpkg\installed\x64-windows-static-runtime\bin\libcrypto-3-x64.dll "%DEPLOY_DIR%\" >nul
+copy /Y C:\vcpkg\installed\x64-windows-static-runtime\bin\libssl-3-x64.dll "%DEPLOY_DIR%\" >nul
 
 echo [6/7] Creating README and documentation...
 (

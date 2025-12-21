@@ -143,8 +143,8 @@ void HotkeyInputDialog::keyPressEvent(QKeyEvent* event) {
     int key = event->key();
     Qt::KeyboardModifiers modifiers = event->modifiers();
 
-    // Remove modifier flags that we don't want (like KeypadModifier)
-    modifiers &= (Qt::ShiftModifier | Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier);
+    // Keep KeypadModifier for numpad key differentiation, remove others we don't want
+    modifiers &= (Qt::ShiftModifier | Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier | Qt::KeypadModifier);
 
     // Create key sequence
     capturedKey_ = QKeySequence(key | modifiers);

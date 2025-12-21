@@ -146,25 +146,67 @@ Result<void> WebSocketClient::join_channel(ChannelId channel_id,
     return Ok();
 }
 
+Result<void> WebSocketClient::leave_channel(ChannelId channel_id) {
+    if (!authenticated_) {
+        return Err<void>(ErrorCode::AuthenticationFailed, "Not authenticated");
+    }
+
+    // Build JSON message to match Rust server protocol
+    QJsonObject json;
+    json["type"] = "leave_channel";  // snake_case to match serde
+    json["channel_id"] = static_cast<qint64>(channel_id);
+
+    QJsonDocument doc(json);
+    QString message = doc.toJson(QJsonDocument::Compact);
+
+    std::cout << "Leaving channel: " << channel_id << "\n";
+    std::cout << "JSON: " << message.toStdString() << "\n";
+
+    websocket_->sendTextMessage(message);
+    messages_sent_++;
+
+    return Ok();
+}
+
 Result<void> WebSocketClient::leave_channel() {
     if (!authenticated_ || current_channel_ == 0) {
         return Err<void>(ErrorCode::InvalidState, "Not in a channel");
     }
-    
+
     // Build JSON message to match Rust server protocol
     QJsonObject json;
     json["type"] = "leave_channel";  // snake_case to match serde
     json["channel_id"] = static_cast<qint64>(current_channel_);
-    
+
     QJsonDocument doc(json);
     QString message = doc.toJson(QJsonDocument::Compact);
-    
+
     std::cout << "Leaving channel: " << current_channel_ << "\n";
-    
+
     websocket_->sendTextMessage(message);
     messages_sent_++;
-    
+
     current_channel_ = 0;
+
+    return Ok();
+}
+
+Result<void> WebSocketClient::request_all_channel_rosters() {
+    if (!authenticated_) {
+        return Err<void>(ErrorCode::InvalidState, "Not authenticated");
+    }
+
+    // Build JSON message to match Rust server protocol
+    QJsonObject json;
+    json["type"] = "request_all_channel_rosters";  // snake_case to match serde
+
+    QJsonDocument doc(json);
+    QString message = doc.toJson(QJsonDocument::Compact);
+
+    std::cout << "📊 Requesting all channel rosters\n";
+
+    websocket_->sendTextMessage(message);
+    messages_sent_++;
 
     return Ok();
 }
@@ -246,6 +288,11 @@ void WebSocketClient::set_key_exchange_init_callback(KeyExchangeInitCallback cal
     on_key_exchange_init_cb_ = std::move(callback);
 }
 
+void WebSocketClient::set_all_channel_rosters_callback(AllChannelRostersCallback callback) {
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    on_all_channel_rosters_cb_ = std::move(callback);
+}
+
 WebSocketClient::Stats WebSocketClient::get_stats() const {
     return Stats{
         .messages_sent = messages_sent_.load(),
@@ -317,6 +364,9 @@ void WebSocketClient::on_text_message_received(const QString& message) {
     } else if (typeStr == "key_exchange_init") {  // SRTP key exchange
         std::cout << "🔑 Received key exchange init" << std::endl;
         handle_key_exchange_init(json_str);
+    } else if (typeStr == "all_channel_rosters") {  // Channel roster broadcast
+        std::cout << "📊 Received all channel rosters" << std::endl;
+        handle_all_channel_rosters(json_str);
     } else {
         std::cout << "Unknown message type: " << typeStr.toStdString() << "\n";
     }
@@ -533,6 +583,50 @@ void WebSocketClient::handle_key_exchange_init(const std::string& json_str) {
     std::lock_guard<std::mutex> lock(callbacks_mutex_);
     if (on_key_exchange_init_cb_) {
         on_key_exchange_init_cb_(key_exchange);
+    }
+}
+
+void WebSocketClient::handle_all_channel_rosters(const std::string& json_str) {
+    QJsonDocument doc = QJsonDocument::fromJson(QByteArray::fromStdString(json_str));
+    QJsonObject json = doc.object();
+
+    // Parse channels array
+    QJsonArray channels_array = json["channels"].toArray();
+
+    protocol::AllChannelRostersResponse response;
+    response.channels.reserve(channels_array.size());
+
+    for (const QJsonValue& ch_val : channels_array) {
+        QJsonObject ch_obj = ch_val.toObject();
+
+        protocol::ChannelRosterInfo roster;
+        roster.channel_id = ch_obj["channel_id"].toInt();
+        roster.channel_name = ch_obj["channel_name"].toString().toStdString();
+
+        // Parse users array
+        QJsonArray users_array = ch_obj["users"].toArray();
+        roster.users.reserve(users_array.size());
+
+        for (const QJsonValue& user_val : users_array) {
+            QJsonObject user_obj = user_val.toObject();
+
+            protocol::UserInfo user;
+            user.id = user_obj["id"].toInt();
+            user.username = user_obj["name"].toString().toStdString();
+            user.speaking = user_obj["speaking"].toBool();
+            user.muted = false;  // Server doesn't send this yet
+
+            roster.users.push_back(user);
+        }
+
+        response.channels.push_back(roster);
+    }
+
+    std::cout << "📊 Parsed rosters for " << response.channels.size() << " channels" << std::endl;
+
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    if (on_all_channel_rosters_cb_) {
+        on_all_channel_rosters_cb_(response);
     }
 }
 

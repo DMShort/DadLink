@@ -179,4 +179,22 @@ struct KeyExchangeResponse {
     std::array<uint8_t, 32> public_key;  // Client's X25519 public key
 };
 
+/**
+ * Channel Roster Info
+ * Contains roster (user list) for a single channel
+ */
+struct ChannelRosterInfo {
+    ChannelId channel_id;
+    std::string channel_name;
+    std::vector<UserInfo> users;
+};
+
+/**
+ * All Channel Rosters Response: Server → Client
+ * Server sends rosters for all channels user has permission to see
+ */
+struct AllChannelRostersResponse {
+    std::vector<ChannelRosterInfo> channels;
+};
+
 } // namespace voip::protocol

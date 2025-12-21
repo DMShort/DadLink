@@ -1,3 +1,34 @@
+# DadLink v1.0.3 - Enhanced UI & UX Update ✨
+
+## What's New
+
+### Channel Roster Improvements
+- ✨ **Visual Channel Hierarchy** - Sub-channels are now visually indented, making it easy to see which channels belong together
+  - Example: "Operations" channel with "Alpha Squad" and "Bravo Squad" as sub-channels
+  - Clear visual organization helps you understand team structure at a glance
+- ✨ **Expand/Collapse Controls** - Discord-style expand arrows for managing channel visibility
+  - Clean, professional button styling with hover effects
+  - Intuitive Discord-blue accent on hover
+- ✨ **User Count Badges** - See how many users are in each channel at a glance
+  - Compact badge design that doesn't clutter the interface
+  - Hidden when no users are present
+
+### Improved Hotkey System
+- 🎯 **Better Hotkey Capture** - More reliable hotkey input dialog
+  - Clear visual feedback when capturing a new hotkey
+  - Prevents conflicts with system keys
+- 🎯 **Enhanced Hotkey Manager** - Improved internal hotkey management for better reliability
+
+### Server Compatibility
+- 🔧 Updated server to v1.0.3 for full compatibility with new client features
+- 🔧 Enhanced TLS handling for more reliable secure connections
+
+## Upgrading from 1.0.2
+
+Download the new version and replace your existing DadLink folder. All settings and channel configurations remain fully compatible.
+
+---
+
 # DadLink v1.0.2 - Portable Release 🎉
 
 ## What's New

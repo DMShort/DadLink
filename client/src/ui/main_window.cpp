@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(statsTimer_, &QTimer::timeout, this, &MainWindow::onVoiceStatsUpdate);
     statsTimer_->start(1000);
     
-    setWindowTitle("VoIP Client - Multi-Channel");
+    setWindowTitle("DadLink v1.0.3 - Voice Chat");
     resize(1000, 700);
     
     addLogMessage("Welcome to VoIP Client!");
@@ -309,16 +309,53 @@ void MainWindow::setupWebSocketCallbacks() {
             
             // Update voice session with correct user ID
             if (voiceSession_) {
-                std::cout << "🔧 Updating VoiceSession user ID from hardcoded 42 to " 
+                std::cout << "🔧 Updating VoiceSession user ID from hardcoded 42 to "
                           << userId_ << std::endl;
                 voiceSession_->set_user_id(userId_);
-            }
-            
-            auto joinResult = wsClient_->join_channel(1);
-            if (!joinResult.is_ok()) {
-                std::cout << "❌ Join channel FAILED: " << joinResult.error().message() << std::endl;
-            } else {
-                std::cout << "✅ Join channel 1 request sent" << std::endl;
+
+                // NOW auto-join Channel 1 with correct user ID
+                auto result = voiceSession_->join_channel(1);
+                if (result.is_ok()) {
+                    addLogMessage("📢 Auto-joined Channel 1 (General) for listening");
+
+                    // Update widget state
+                    if (channelWidgets_.count(1)) {
+                        channelWidgets_[1]->setJoined(true);
+                        channelWidgets_[1]->setListening(true);
+                    }
+
+                    // Add yourself to roster with CORRECT user ID
+                    if (rosterManager_) {
+                        ChannelRosterManager::ChannelUser self;
+                        self.id = userId_;
+                        self.username = username_;
+                        self.speaking = false;
+                        self.listening = true;
+                        rosterManager_->addUserToChannel(1, self);
+                    }
+
+                    // Send join message to server
+                    if (wsClient_) {
+                        auto joinResult = wsClient_->join_channel(1);
+                        if (!joinResult.is_ok()) {
+                            std::cout << "❌ Join channel FAILED: " << joinResult.error().message() << std::endl;
+                        } else {
+                            std::cout << "✅ Join channel 1 request sent" << std::endl;
+                        }
+
+                        // Request rosters after a short delay
+                        QTimer::singleShot(500, this, [this]() {
+                            if (wsClient_) {
+                                auto rosterResult = wsClient_->request_all_channel_rosters();
+                                if (rosterResult.is_ok()) {
+                                    addLogMessage("📊 Requested channel rosters from server");
+                                }
+                            }
+                        });
+                    }
+
+                    statusBar()->showMessage("Voice: Connected | Channel 1 active");
+                }
             }
         } else {
             std::cout << "❌ Login FAILED: " << response.error_message << std::endl;
@@ -423,42 +460,34 @@ void MainWindow::setupWebSocketCallbacks() {
     
     wsClient_->set_user_joined_callback([this](const protocol::UserJoinedNotification& notification) {
         QMetaObject::invokeMethod(this, "onWsUserJoined", Qt::QueuedConnection,
-            Q_ARG(uint32_t, notification.user_id), 
+            Q_ARG(ChannelId, notification.channel_id),
+            Q_ARG(uint32_t, notification.user_id),
             Q_ARG(std::string, notification.username));
     });
     
     wsClient_->set_user_left_callback([this](const protocol::UserLeftNotification& notification) {
         QMetaObject::invokeMethod(this, "onWsUserLeft", Qt::QueuedConnection,
+            Q_ARG(ChannelId, notification.channel_id),
             Q_ARG(uint32_t, notification.user_id));
+    });
+
+    // All channel rosters callback
+    wsClient_->set_all_channel_rosters_callback([this](const protocol::AllChannelRostersResponse& response) {
+        QMetaObject::invokeMethod(this, [this, response]() {
+            rosterManager_->updateAllRosters(response.channels);
+            addLogMessage(QString("📊 Received rosters for %1 channels").arg(response.channels.size()));
+        }, Qt::QueuedConnection);
     });
 }
 
 void MainWindow::setVoiceSession(std::shared_ptr<session::VoiceSession> voiceSession) {
     voiceSession_ = voiceSession;
-    
+
     if (voiceSession_) {
-        addLogMessage("✅ Voice session initialized (waiting for channel join...)");
-        
-        // Auto-join Channel 1 (General) for listening by default
-        auto result = voiceSession_->join_channel(1);
-        if (result.is_ok()) {
-            addLogMessage("📢 Auto-joined Channel 1 (General) for listening");
-            
-            // Update widget state
-            if (channelWidgets_.count(1)) {
-                channelWidgets_[1]->setJoined(true);
-                channelWidgets_[1]->setListening(true);
-            }
-            
-            // Notify server via WebSocket
-            if (wsClient_) {
-                wsClient_->join_channel(1);
-            }
-        }
-        
+        addLogMessage("✅ Voice session initialized (waiting for login...)");
         addLogMessage("🎤 Press F1-F4 to transmit to channels");
         addLogMessage("💡 Click 'Listen' to join more channels");
-        statusBar()->showMessage("Voice: Connected | Channel 1 active");
+        // Note: Auto-join moved to login callback after user ID is set
     }
 }
 
@@ -755,35 +784,62 @@ void MainWindow::onWsChannelJoined(uint32_t channelId, const std::string& channe
     addLogMessage(QString("💡 User list has %1 users").arg(userList_->count()));
 }
 
-void MainWindow::onWsUserJoined(uint32_t userId, const std::string& username) {
-    std::cout << "DEBUG: onWsUserJoined called - userId=" << userId 
-              << " username=" << username 
-              << " myUserId=" << userId_ << std::endl;
-    
+void MainWindow::onWsUserJoined(ChannelId channelId, uint32_t userId, const std::string& username) {
+    std::cout << "👤 User joined - channelId=" << channelId
+              << " userId=" << userId
+              << " username=" << username << std::endl;
+
     if (userId == userId_) {
-        std::cout << "DEBUG: Skipping self" << std::endl;
+        std::cout << "  Skipping self" << std::endl;
         return;  // Don't add yourself again
     }
-    
-    auto* item = new QListWidgetItem(QString::fromStdString(username));
-    item->setData(Qt::UserRole, userId);
-    userList_->addItem(item);
-    
-    std::cout << "DEBUG: Added user to list. New count: " << userList_->count() << std::endl;
-    
-    addLogMessage(QString("👤 %1 joined the channel")
-        .arg(QString::fromStdString(username)));
+
+    // Update roster manager for the ACTUAL channel where user joined
+    std::cout << "  rosterManager_ = " << (void*)rosterManager_ << std::endl;
+    if (rosterManager_) {
+        ChannelRosterManager::ChannelUser user;
+        user.id = userId;
+        user.username = QString::fromStdString(username);
+        user.speaking = false;
+        user.listening = true;
+        std::cout << "  Calling addUserToChannel(" << channelId << ", user " << userId << ")" << std::endl;
+        rosterManager_->addUserToChannel(channelId, user);
+    } else {
+        std::cout << "  ERROR: rosterManager_ is nullptr!" << std::endl;
+    }
+
+    // Only update old single-channel UI if this is the current channel
+    if (channelId == currentChannelId_) {
+        auto* item = new QListWidgetItem(QString::fromStdString(username));
+        item->setData(Qt::UserRole, userId);
+        userList_->addItem(item);
+    }
+
+    addLogMessage(QString("👤 %1 joined channel %2")
+        .arg(QString::fromStdString(username))
+        .arg(channelId));
 }
 
-void MainWindow::onWsUserLeft(uint32_t userId) {
-    for (int i = 0; i < userList_->count(); ++i) {
-        auto* item = userList_->item(i);
-        if (item->data(Qt::UserRole).toUInt() == userId) {
-            QString username = item->text();
-            delete userList_->takeItem(i);
-            addLogMessage(QString("👋 %1 left the channel").arg(username));
-            break;
+void MainWindow::onWsUserLeft(ChannelId channelId, uint32_t userId) {
+    std::cout << "👋 User left - channelId=" << channelId
+              << " userId=" << userId << std::endl;
+
+    // Update roster manager for the ACTUAL channel where user left
+    rosterManager_->removeUserFromChannel(channelId, userId);
+
+    // Only update old single-channel UI if this is the current channel
+    if (channelId == currentChannelId_) {
+        for (int i = 0; i < userList_->count(); ++i) {
+            auto* item = userList_->item(i);
+            if (item->data(Qt::UserRole).toUInt() == userId) {
+                QString username = item->text();
+                delete userList_->takeItem(i);
+                addLogMessage(QString("👋 %1 left channel %2").arg(username).arg(channelId));
+                break;
+            }
         }
+    } else {
+        addLogMessage(QString("👋 User %1 left channel %2").arg(userId).arg(channelId));
     }
 }
 
@@ -794,17 +850,35 @@ void MainWindow::setupMultiChannelUI() {
     
     // Create hotkey manager
     hotkeyManager_ = new HotkeyManager(this);
-    
+
     // Connect hotkey signals to PTT functions
     connect(hotkeyManager_, &HotkeyManager::hotkeyPressed,
             this, &MainWindow::onHotkeyPressed);
     connect(hotkeyManager_, &HotkeyManager::hotkeyReleased,
             this, &MainWindow::onHotkeyReleased);
-    
+
+    // Create roster manager
+    rosterManager_ = new ChannelRosterManager(this);
+
+    // Connect roster changes to channel widgets
+    connect(rosterManager_, &ChannelRosterManager::channelRosterChanged,
+            this, [this](ChannelId channelId) {
+                std::cout << "📊 MainWindow: channelRosterChanged signal for channel " << channelId << std::endl;
+                if (channelWidgets_.count(channelId)) {
+                    auto users = rosterManager_->getChannelUsers(channelId);
+                    std::cout << "📊   Found widget, updating with " << users.size() << " users" << std::endl;
+                    channelWidgets_[channelId]->setUserList(users);
+                    channelWidgets_[channelId]->setUserCount(static_cast<int>(users.size()));
+                } else {
+                    std::cout << "📊   WARNING: No widget found for channel " << channelId << std::endl;
+                }
+            });
+
     // Create default channels
     createDefaultChannels();
-    
+
     addLogMessage("⌨️ Hotkey system initialized");
+    addLogMessage("📊 Roster manager initialized");
 }
 
 void MainWindow::createDefaultChannels() {
@@ -813,22 +887,23 @@ void MainWindow::createDefaultChannels() {
         ChannelId id;
         QString name;
         Qt::Key hotkey;
+        bool isSubChannel;
     };
-    
+
     std::vector<ChannelDef> channels = {
-        {1, "General", Qt::Key_F1},
-        {2, "Operations", Qt::Key_F2},
-        {3, "Alpha Squad", Qt::Key_F3},
-        {4, "Bravo Squad", Qt::Key_F4},
-        {5, "Social", Qt::Key_F5}
+        {1, "General", Qt::Key_F1, false},
+        {2, "Operations", Qt::Key_F2, false},
+        {3, "Alpha Squad", Qt::Key_F3, true},      // Sub-channel of Operations
+        {4, "Bravo Squad", Qt::Key_F4, true},      // Sub-channel of Operations
+        {5, "Social", Qt::Key_F5, false}
     };
-    
+
     // Get layout from container
     auto* layout = channelContainer_->layout();
-    
+
     for (const auto& def : channels) {
-        // Create channel widget
-        auto* widget = new ChannelWidget(def.id, def.name, this);
+        // Create channel widget with indentation for sub-channels
+        auto* widget = new ChannelWidget(def.id, def.name, def.isSubChannel, this);
         
         // Register hotkey
         hotkeyManager_->registerHotkey(def.id, QKeySequence(def.hotkey));
@@ -869,7 +944,18 @@ void MainWindow::onChannelListenToggled(ChannelId id, bool listen) {
                 channelWidgets_[id]->setJoined(true);
                 channelWidgets_[id]->setListening(true);
             }
-            
+
+            // Add yourself to the roster
+            if (rosterManager_) {
+                ChannelRosterManager::ChannelUser self;
+                self.id = userId_;
+                self.username = username_;
+                self.speaking = false;
+                self.listening = true;
+                std::cout << "  Adding self to roster for channel " << id << std::endl;
+                rosterManager_->addUserToChannel(id, self);
+            }
+
             // Send join message to server
             if (wsClient_) {
                 wsClient_->join_channel(id);
@@ -881,18 +967,23 @@ void MainWindow::onChannelListenToggled(ChannelId id, bool listen) {
         auto result = voiceSession_->leave_channel(id);
         if (result.is_ok()) {
             addLogMessage(QString("👋 Left channel %1").arg(id));
-            
+
             // Update widget state
             if (channelWidgets_.count(id)) {
                 channelWidgets_[id]->setJoined(false);
                 channelWidgets_[id]->setListening(false);
             }
-            
-            // Send leave message to server (WebSocketClient doesn't support per-channel leave yet)
-            // TODO: Implement multi-channel leave in WebSocketClient
-            // if (wsClient_) {
-            //     wsClient_->leave_channel();
-            // }
+
+            // Remove yourself from the roster
+            if (rosterManager_) {
+                std::cout << "  Removing self from roster for channel " << id << std::endl;
+                rosterManager_->removeUserFromChannel(id, userId_);
+            }
+
+            // Send leave message to server
+            if (wsClient_) {
+                wsClient_->leave_channel(id);
+            }
         }
     }
 }

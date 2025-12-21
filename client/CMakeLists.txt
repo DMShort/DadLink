@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(voip-client VERSION 0.1.0 LANGUAGES CXX)
+project(voip-client VERSION 1.0.3 LANGUAGES CXX)
 
 # Static link MSVC runtime for portable deployment (no VC++ redistributable needed)
 if(MSVC)
@@ -48,6 +48,7 @@ set(VOIP_CLIENT_SOURCES
     src/ui/hotkey_manager.cpp
     src/ui/hotkey_input_dialog.cpp
     src/ui/channel_widget.cpp
+    src/ui/channel_roster_manager.cpp
     src/audio/audio_engine.cpp
     src/audio/opus_codec.cpp
     src/audio/jitter_buffer.cpp
@@ -82,6 +83,7 @@ set(VOIP_CLIENT_HEADERS
     include/ui/hotkey_manager.h
     include/ui/hotkey_input_dialog.h
     include/ui/channel_widget.h
+    include/ui/channel_roster_manager.h
     include/audio/audio_engine.h
     include/audio/opus_codec.h
     include/audio/jitter_buffer.h

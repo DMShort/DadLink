@@ -14,6 +14,7 @@
 #include "protocol/control_messages.h"
 #include "ui/hotkey_manager.h"
 #include "ui/channel_widget.h"
+#include "ui/channel_roster_manager.h"
 #include "ui/admin/admin_panel.h"
 #include <QTabWidget>
 
@@ -51,8 +52,8 @@ private slots:
     void onWsDisconnected();
     void onWsError(const std::string& error);
     void onWsChannelJoined(uint32_t channelId, const std::string& channelName);
-    void onWsUserJoined(uint32_t userId, const std::string& username);
-    void onWsUserLeft(uint32_t userId);
+    void onWsUserJoined(ChannelId channelId, uint32_t userId, const std::string& username);
+    void onWsUserLeft(ChannelId channelId, uint32_t userId);
     
     // Multi-channel callbacks
     void onChannelListenToggled(ChannelId id, bool listen);
@@ -110,6 +111,7 @@ private:
     std::shared_ptr<network::WebSocketClient> wsClient_;
     std::shared_ptr<session::VoiceSession> voiceSession_;
     HotkeyManager* hotkeyManager_ = nullptr;
+    ChannelRosterManager* rosterManager_ = nullptr;
     std::map<ChannelId, ChannelWidget*> channelWidgets_;
     
     // State
